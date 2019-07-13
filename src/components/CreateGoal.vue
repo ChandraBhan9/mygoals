@@ -1,5 +1,6 @@
 <template>
         <div class="m-5">
+          
           <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#goalModal">+ Create goal </button>
            <!--Add Goals Modal -->
             <div class="modal fade" id="goalModal" tabindex="-1" role="dialog" aria-labelledby="goalModalLabel" aria-hidden="true">
