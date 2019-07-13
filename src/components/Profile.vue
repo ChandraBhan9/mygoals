@@ -72,7 +72,8 @@ export default {
                     years = years - 1;
          var days;
          var months;
-
+  
+  
       if (DOB.getDate() > today.getDate()) {  
           months = (totalMonths % 12);
           if (months == 0)
