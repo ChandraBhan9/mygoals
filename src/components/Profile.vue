@@ -10,7 +10,6 @@
   <!-- Create Goals Component -->
          <createGoal />
 
-
   <!-- Modal For Goals Detail -->
          <Timeline />
 

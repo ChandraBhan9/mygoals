@@ -2,23 +2,23 @@
     <div>
 
  <!-- Goals Timeline  -->
-       <div class="swiper-container">
-        <p class="swiper-control">
+       <div class="swiper-container overflow-hidden">
+        <p class="text-right">
           <button type="button" class="btn btn-default btn-sm prev-slide">Prev</button>
           <button type="button" class="btn btn-default btn-sm next-slide">Next</button>
         </p>
-        <div class="swiper-wrapper timeline"> 
-          <div class="swiper-slide" v-on:click="goalModel(index)" data-toggle="modal" data-target="#exampleModalLong" v-for="(item,index) in Goals" :key="index">
-            <div class="timestamp">
-              <span class="date">{{updateDiffs(item.gDate)}}</span>
+        <div class="swiper-wrapper d-flex my-5"> 
+          <div class="swiper-slide lead" v-on:click="goalModel(index)" data-toggle="modal" data-target="#exampleModalLong" v-for="(item,index) in Goals" :key="index">
+            <div class="mb-2 small">
+              <span class="date mx-3" v-if="item.status">Goal Achived</span>
+              <span class="date" v-if="!item.status">{{updateDiffs(item.gDate, index)}} <sup>.{{time.hr}}{{time.min}}{{time.sec}}{{time.msec}}</sup></span>
             </div>
-            <div> <i class="fa-2x bg-white" :class="item.gTag"></i> </div>
-            <div class="status">
-              <span>{{item.gName}}</span>
+            <div  :class="{ inactive: item.status }"> <i class="fa-2x bg-white taggg" :class="item.gTag"></i> </div>
+            <div class="status pt-3 position-relative">
+              <span class=" font-weight-bold">{{item.gName}}</span>
             </div>
           </div>
         </div>
-        <!-- Add Pagination -->
         <div class="swiper-pagination"></div>
       </div>
 
@@ -30,14 +30,21 @@
                <h5 class="modal-title" id="exampleModalLongTitle"> <i id="mytag" class="bg-white" :class="goal.gTag"></i> {{goal.gName}}</h5>
                <small class="ml-auto">Due Date : {{goal.gDate}}</small>
             </div>
-            <div class="modal-body">
+            <div v-if="!goal.status" class="modal-body">
                <div>Description : {{goal.gDescription}}</div>
                <div> {{updateDiffs(goal.gDate)}}</div>
             </div>
+            <div v-if="goal.status" class="modal-body">
+               <h2>congratulation!!</h2>
+               <div> <i class="fas text-warning fa-3x fa-award"></i></div>
+               <div class="text-muted">You Achived This Goal</div>
+            </div>
             <div class="modal-footer">
-               <button class="btn badge badge-pill btn-danger mr-auto" v-on:click="delGoal">Delete Goal</button>
+                <i class="fas fa-trash-alt" data-toggle="tooltip"  title="Delete Goal"  v-on:click="delGoal"></i>
+               <button class="btn badge badge-pill btn-success mr-auto" v-if="!goal.status" v-on:click="achivedGoal">Mark As Achived</button>
+               <button class="btn badge badge-pill btn-danger mr-auto" v-if="goal.status" v-on:click="achivedGoal">Mark As Unachived</button>
                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
-               <button type="button" class="btn btn-sm btn-primary"  data-dismiss="modal" data-toggle="modal" data-target="#editGoal">Edit</button>
+               <button type="button" class="btn btn-sm btn-primary"  data-dismiss="modal" data-toggle="modal" v-if="!goal.status" data-target="#editGoal">Edit</button>
             </div>
          </div>
         </div>
@@ -104,10 +111,8 @@ export default {
    selNum: '',
    name: '',
    checki:'',
-   sec: '',
-   min: '',
-   hr: '',
-   goal: {'gName': '', 'gTag': '', 'gDate': '', 'gDescription': ''}
+   time: {'hr': '', 'min': '', 'sec': '', 'msec': ''},
+   goal: {'gName': '', 'gTag': '', 'gDate': '', 'gDescription': '', "status": ''}
   }},
 
 
@@ -115,18 +120,19 @@ export default {
   methods: {
 
 //Update time
-    updateDiffs(gDate){
-       var gDate= new Date(gDate);
+    updateDiffs(gdate, index){
+       var gDate= new Date(gdate);
        var today = new Date();
-   var totalMonths = (gDate.getFullYear() - today.getFullYear()) * 12 + gDate.getMonth() - today.getMonth();
+
+       var totalMonths = (gDate.getFullYear() - today.getFullYear()) * 12 + gDate.getMonth() - today.getMonth();
             var years = gDate.getFullYear() - today.getFullYear();
             if (today.getMonth() > gDate.getMonth())
                 years = years - 1;
             else if (today.getMonth() === gDate.getMonth())
                 if (today.getDate() > gDate.getDate())
                     years = years - 1;
-             var days;
-             var months;
+        var days;
+        var months;
 
       if (today.getDate() > gDate.getDate()) {  
           months = (totalMonths % 12);
@@ -150,14 +156,15 @@ export default {
           days = gDate.getDate() - today.getDate();
            months = (totalMonths % 12);
       }     
-    this.hr = 24 - today.getHours();
-    this.min = 60 - today.getMinutes();
-    this.sec = 60 - today.getSeconds();
-
-    if(years<1)
-    return "Expired"
-    return years + "Y "+ months + "M " + days + "D " + this.hr + "hr " +   this.min + "min "+ this.sec;
-    },
+    this.time['hr'] = 24 - today.getHours();
+    this.time['min'] = 60 - today.getMinutes();
+    this.time['sec'] = 60 - today.getSeconds();
+    var ms = 1000 - today.getMilliseconds();
+    if(ms <100) this.time['msec'] = '0' + ms
+         else   this.time['msec'] = ms
+    
+    return years + "Y "+ months + "M " + days + "D ";
+   },
 
 // Deleat Goal
     delGoal(){
@@ -179,7 +186,8 @@ export default {
       this.goal["gName"] = this.Goals[index].gName;
       this.goal["gTag"] = this.Goals[index].gTag;
       this.goal["gDate"] = this.Goals[index].gDate;
-      this.goal["gDescription"] = this.Goals[index].gDescription
+      this.goal["gDescription"] = this.Goals[index].gDescription;
+       this.goal["status"] = this.Goals[index].status;
     },
   //Edit Goal detail
     editGoal(){
@@ -201,6 +209,16 @@ export default {
       localStorage.setItem(this.name, JSON.stringify(goals));
       location.reload();
     },
+    //Achived Goals
+      achivedGoal(){
+      var goals = localStorage.getItem(this.name);
+      goals = JSON.parse(goals);
+      if(goals[this.selNum].status == true)
+       goals[this.selNum].status = false
+      else goals[this.selNum].status = true
+      localStorage.setItem(this.name, JSON.stringify(goals));
+      location.reload();
+    },
 
 
   //Check User is logged in (check localstorage)
@@ -210,10 +228,34 @@ export default {
       else return this.checki= true;  
    },
 
+   //Check for expired goals
+   expGoals(){
+       for(var n= 0; n<this.Goals.length; n++){
+       if( this.today > this.Goals[n].gDate && !this.Goals[n].status){
+         let removedItem =  this.Goals.splice(n,1)
+          
+         var Expgoals = localStorage.getItem(this.name+ ' Exp');
+         Expgoals = Expgoals ? JSON.parse(Expgoals) : [];
+         Expgoals.push(removedItem)
+      
+         localStorage.setItem(this.name+" Exp",JSON.stringify(Expgoals));
+         localStorage.setItem(this.name,JSON.stringify(this.Goals));
+       } }
+   }
+
   
   },
 
   beforeMount(){  
+          // Date Validation for Goals
+          var nowDate = new Date(); 
+          var date = nowDate.getDate();
+          var month = nowDate.getMonth() + 1;
+          if(month < 10){ month = '0'+month}
+          if(date < 10){ date = '0'+date}
+          var year  = nowDate.getFullYear()
+          this.today = year+'-'+month+'-'+date
+
         this.checkit();  
          if(this.checki){
             // Set Goals Timeline
@@ -222,14 +264,16 @@ export default {
             this.name = c[0].name
             var mygoals = localStorage.getItem(this.name);
             this.Goals =  JSON.parse(mygoals)
-         }   
+          }
   },
 
-  mounted(){   
-          var interval = setInterval(() => {
-          this.updateDiffs();
-          },1000);
-          this.updateDiffs();
+  mounted(){  
+  
+       
+         setInterval(() => {
+          this.updateDiffs();  this.expGoals()
+          },107);
+      
 
           var swiper = new Swiper('.swiper-container', {
           //pagination: '.swiper-pagination',
@@ -239,15 +283,6 @@ export default {
           nextButton: '.next-slide',
           prevButton: '.prev-slide',
         });  
-
-      // Date Validation for Goals
-          var nowDate = new Date(); 
-          var date = nowDate.getDate();
-          var month = nowDate.getMonth() + 1;
-          if(month < 10){ month = '0'+month}
-          if(date < 10){ date = '0'+date}
-          var year  = nowDate.getFullYear()
-          this.today = year+'-'+month+'-'+date
 
   },
 }
@@ -260,67 +295,20 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
-.timeline {
-  margin: 50px 0;
-  list-style-type: none;
-  display: flex;
-  padding: 0;
-  text-align: center;
-}
-.timeline li {
-  transition: all 200ms ease-in;
-}
-.timestamp {
-
-  margin-bottom: 10px;
-  padding: 0px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-weight: 100;
-  font-size: 15px; 
-}
 .status {
-  padding: 0px 70px;
-  display: flex;
-  justify-content: center;
   border-top: 4px solid #3e70ff;
   bottom: 16%;
-  position: relative;
-  transition: all 200ms ease-in ;
   z-index: -1;
+  padding: 0px 52px;
 }
-
   
-.status span {
-  font-weight: 600;
-  padding-top: 20px;
-}
-
-.status:hover span:before{
-   color: green;
-}
-.swiper-control {
-  text-align: right;
-}
-
 .swiper-container {
   width: 100%;
-  height: 250px;
-  margin: 50px 0;
-  overflow: hidden;
+  height: 300px;
   padding: 5px 20px 30px 20px;
 }
-.swiper-slide {
-  width: 200px;
-  text-align: center;
-  font-size: 18px;
-}
-.swiper-slide:nth-child(2n) {
-  width: 40%;
-}
-.swiper-slide:nth-child(3n) {
-  width: 20%;
-}
+
+.inactive { color: green; }
+
 </style>
 
